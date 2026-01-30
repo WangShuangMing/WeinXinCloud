@@ -75,6 +75,7 @@ namespace aspnetapp.Controllers
                         updatedAt = DateTime.Now
                     };
                     await _context.AddAsync(userData);
+                    await _context.SaveChangesAsync();
                 }
                 else
                 {
