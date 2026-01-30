@@ -17,7 +17,7 @@ public class CounterResponse
 
 namespace aspnetapp.Controllers
 {
-    [Route("api/count")]
+    [Route("api")]
     [ApiController]
     public class CounterController : ControllerBase
     {
@@ -43,13 +43,13 @@ namespace aspnetapp.Controllers
             }
         }
         // GET: api/count
-        [HttpGet]
+        [HttpGet("userlist")]
         public async Task<ActionResult<CounterResponse>> GetUserList()
         {
             var counters = await _context.Counters.ToListAsync();
             return new CounterResponse { Data = JsonConvert.SerializeObject(counters) };
         }
-        [HttpGet]
+        [HttpGet("user")]
         public async Task<ActionResult<CounterResponse>> GetUser(int userId)
         {
             var counter = await getCounterWithInit(userId);
@@ -58,7 +58,7 @@ namespace aspnetapp.Controllers
 
         // POST: api/Counter
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
+        [HttpPost("userdata")]
         public async Task<ActionResult<CounterResponse>> PostUserData(int userId, string data)
         {
             try
