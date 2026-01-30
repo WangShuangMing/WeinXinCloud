@@ -1,18 +1,18 @@
 #nullable disable
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using aspnetapp;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using aspnetapp;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.Metrics;
+using System.Linq;
+using System.Threading.Tasks;
 
-public class CounterRequest {
-    public string action { get; set; }
-}
-public class CounterResponse {
-    public int data { get; set; }
+public class CounterResponse
+{
+    public string Data { get; set; }
 }
 
 namespace aspnetapp.Controllers
@@ -27,7 +27,7 @@ namespace aspnetapp.Controllers
         {
             _context = context;
         }
-        private async Task<Counter> getCounterWithInit()
+        private async Task<Counter> getCounterWithInit(int userId)
         {
             var counters = await _context.Counters.ToListAsync();
             if (counters.Count() > 0)
@@ -36,7 +36,7 @@ namespace aspnetapp.Controllers
             }
             else
             {
-                var counter = new Counter { count = 0, createdAt = DateTime.Now, updatedAt = DateTime.Now };
+                var counter = new Counter { createdAt = DateTime.Now, updatedAt = DateTime.Now };
                 _context.Counters.Add(counter);
                 await _context.SaveChangesAsync();
                 return counter;
@@ -44,33 +44,47 @@ namespace aspnetapp.Controllers
         }
         // GET: api/count
         [HttpGet]
-        public async Task<ActionResult<CounterResponse>> GetCounter()
+        public async Task<ActionResult<CounterResponse>> GetUserList()
         {
-            var counter =  await getCounterWithInit();
-            return new CounterResponse { data = counter.count };
+            var counters = await _context.Counters.ToListAsync();
+            return new CounterResponse { Data = JsonConvert.SerializeObject(counters) };
+        }
+        [HttpGet]
+        public async Task<ActionResult<CounterResponse>> GetUser(int userId)
+        {
+            var counter = await getCounterWithInit(userId);
+            return new CounterResponse { Data = counter.data };
         }
 
         // POST: api/Counter
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<CounterResponse>> PostCounter(CounterRequest data)
+        public async Task<ActionResult<CounterResponse>> PostUserData(int userId, string data)
         {
-            if (data.action == "inc") {
-                var counter = await getCounterWithInit();
-                counter.count += 1;
-                counter.updatedAt = DateTime.Now;
-                await _context.SaveChangesAsync();
-                return new CounterResponse { data = counter.count };
+            try
+            {
+                var counters = await _context.Counters.ToListAsync();
+                var userData = counters.Find(user => userId == user.id);
+                if (userData == null)
+                {
+                    userData = new Counter()
+                    {
+                        userId = userId,
+                        data = data,
+                        createdAt = DateTime.Now,
+                        updatedAt = DateTime.Now
+                    };
+                    await _context.AddAsync(userData);
+                }
+                else
+                {
+                    userData.data = data;
+                }
+                return new CounterResponse { Data = data };
             }
-            else if (data.action == "clear") {
-                var counter = await getCounterWithInit();
-                counter.count = 0;
-                counter.updatedAt = DateTime.Now;
-                await _context.SaveChangesAsync();
-                return new CounterResponse { data = counter.count };
-            }
-            else {
-                return BadRequest();
+            catch (Exception ex) 
+            {
+                return BadRequest(ex.Message);
             }
         }
     }
